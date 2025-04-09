@@ -1,6 +1,6 @@
 //import react from 'react'
 
-import {Webcam} from "../components/Webcam.tsx";
+import {Webcam} from "../components/ui/webcam.tsx";
 
 export const Home = () => {
     return (
