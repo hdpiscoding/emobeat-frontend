@@ -68,7 +68,7 @@ export const Webcam: react.FC = () => {
 
     return (
         <div className="flex flex-col items-center space-y-4 p-4">
-            <video ref={videoRef} autoPlay className="w-full h-72 rounded-lg shadow-lg" />
+            <video ref={videoRef} autoPlay className="w-[1000px] h-80 object-none rounded-lg shadow-lg" />
             <canvas ref={canvasRef} className="absolute top-0 left-0" />
             <p className="text-lg font-semibold">Current emotion: {emotion}</p>
         </div>
