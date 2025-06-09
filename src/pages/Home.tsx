@@ -17,7 +17,7 @@ interface Song {
 const emotionMap: { [key: string]: number } = { neutral: 1, happy: 2, sad: 3, angry: 4, fearful: 5, disgusted: 6, surprised: 7 };
 const BEARER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJ1c2VybmFtZSI6ImhhcGh1dGhpbmgiLCJyb2xlIjoibGlzdGVuZXIiLCJpYXQiOjE3NDk0NDM5NDQsImV4cCI6MjAwODY0Mzk0NH0.QHgyuGIP3aCTgMFSsWKONFBXjLbwTY4GfQxEZaastEc";
 const RECOMMEND_API_URL = "https://api-emobeat.sonata.io.vn/api/v1/recommender/songs?topN=10";
-const COLLECT_API_URL = "http://localhost:3005/api/v1/emotion-collect/collect";
+const COLLECT_API_URL = "https://api-emobeat.sonata.io.vn/emotion-collector-service/api/v1/emotion-collect/collect";
 
 export const Home: React.FC = () => {
   // --- Các state không đổi ---
