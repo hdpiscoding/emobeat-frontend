@@ -6,6 +6,7 @@ import {useAuthStore} from "@/store/useAuthStore.ts";
 import {useGeneralStore} from "@/store/useGeneralStore.ts";
 import {useMusicStore} from "@/store/useMusicStore.ts";
 import {getRecommendedQueue} from "@/services/musicServices.ts";
+import {toast} from "react-toastify";
 
 const emotionMap: { [key: string]: number } = {
     neutral: 1,
@@ -134,6 +135,7 @@ export const  Webcam: react.FC = react.memo(() => {
                         };
                         collectEmotion(requestBody).then(response => {
                             console.log("Successfully sent emotion data:", response.data);
+                            toast.success("Emotion data sent successfully with dominant emotion: " + dominantEmotion);
                         }).catch(error => {
                             console.error("Error sending emotion data:", error);
                         });
