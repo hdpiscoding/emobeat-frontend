@@ -1,36 +1,35 @@
-// src/components/ui/webcam.tsx
-
-import React, { useEffect, useRef, useState } from 'react';
+/* eslint-disable */
+import react, {useEffect, useRef, useState} from 'react';
 import * as faceapi from "face-api.js";
-import axios from 'axios'; // Đảm bảo bạn đã cài đặt axios
+import {collectEmotion} from "@/services/emotionServices.ts";
+import {useAuthStore} from "@/store/useAuthStore.ts";
+import {useGeneralStore} from "@/store/useGeneralStore.ts";
+import {useMusicStore} from "@/store/useMusicStore.ts";
+import {getRecommendedQueue} from "@/services/musicServices.ts";
 
-// Định nghĩa enum cảm xúc để dễ dàng map sang ID
 const emotionMap: { [key: string]: number } = {
-  neutral: 1,
-  happy: 2,
-  sad: 3,
-  angry: 4,
-  fearful: 5,
-  disgusted: 6,
-  surprised: 7
+    neutral: 1,
+    happy: 2,
+    sad: 3,
+    angry: 4,
+    fearful: 5,
+    disgusted: 6,
+    surprised: 7
 };
 
-export const Webcam: React.FC = () => {
+export const  Webcam: react.FC = react.memo(() => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    
-    // State để hiển thị cảm xúc hiện tại lên UI
+    //const canvasRef = useRef<HTMLCanvasElement>(null);
     const [currentEmotion, setCurrentEmotion] = useState<string>("Processing...");
-    
-    // State mới: Lưu trữ chuỗi cảm xúc được nhận diện
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [emotionHistory, setEmotionHistory] = useState<string[]>([]);
-    
-    // Token và các thông tin API
-    const BEARER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJ1c2VybmFtZSI6ImhhcGh1dGhpbmgiLCJyb2xlIjoibGlzdGVuZXIiLCJpYXQiOjE3NDk0NDM5NDQsImV4cCI6MjAwODY0Mzk0NH0.QHgyuGIP3aCTgMFSsWKONFBXjLbwTY4GfQxEZaastEc";
-    const API_URL = "http://localhost:3005/api/v1/emotion-collect/collect";
+    const userId = useAuthStore(state => state.userId);
+    const allowRecommend = useGeneralStore(state => state.allowRecommend);
+    const detectInterval = useGeneralStore(state => state.detectInterval);
+    const recommendInterval = useGeneralStore(state => state.recommendInterval);
+    const setEmotion = useGeneralStore(state => state.setEmotion);
+    const setQueue = useMusicStore(state => state.setQueue);
 
-    // --- CÁC HÀM KHỞI TẠO (KHÔNG ĐỔI) ---
+    // Hàm tải mô hình và bắt đầu camera
     const startVideo = async () => {
         if (!videoRef.current) return;
         try {
@@ -41,16 +40,13 @@ export const Webcam: React.FC = () => {
         }
     };
 
+    // Hàm tải mô hình của face-api.js
     const loadModels = async () => {
         const MODEL_URL = "/models";
-        await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
-        ]);
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
         console.log("Models loaded!");
     };
-
-    // --- LOGIC CHÍNH ---
 
     // 1. useEffect để tải model và bắt đầu nhận diện cảm xúc (500ms/lần)
     useEffect(() => {
@@ -66,7 +62,7 @@ export const Webcam: React.FC = () => {
                 if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) {
                     return;
                 }
-                
+
                 const detections = await faceapi
                     .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
                     .withFaceExpressions();
@@ -79,22 +75,14 @@ export const Webcam: React.FC = () => {
 
                     // Cập nhật UI
                     setCurrentEmotion(topEmotion);
+                    setEmotion(emotionMap[topEmotion] || emotionMap['neutral']);
                     // Thêm vào mảng lịch sử
                     setEmotionHistory(prevHistory => [...prevHistory, topEmotion]);
 
-                    // Vẽ lên canvas (tùy chọn)
-                    if (canvasRef.current) {
-                        const canvas = canvasRef.current;
-                        const displaySize = { width: videoRef.current.width, height: videoRef.current.height };
-                        faceapi.matchDimensions(canvas, displaySize);
-                        const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                        canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
-                        faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
-                    }
                 } else {
                     setCurrentEmotion("Can't detect face");
                 }
-            }, 500);
+            }, detectInterval);
 
             // Cleanup function để dừng interval khi component unmount
             return () => {
@@ -114,64 +102,65 @@ export const Webcam: React.FC = () => {
 
     // 2. useEffect mới để chạy "Job" gửi dữ liệu mỗi 10 giây
     useEffect(() => {
-        const jobInterval = setInterval(() => {
-            // Sử dụng functional update để lấy được giá trị state mới nhất
-            setEmotionHistory(currentHistory => {
-                if (currentHistory.length === 0) {
-                    console.log("10s Job: No emotions detected in this window. Skipping API call.");
-                    return []; // Vẫn trả về mảng rỗng để reset
-                }
+        let jobInterval: NodeJS.Timeout | null = null;
+        if (allowRecommend) {
+            jobInterval = setInterval(() => {
+                // Sử dụng functional update để lấy được giá trị state mới nhất
+                setEmotionHistory(currentHistory => {
+                    if (currentHistory.length === 0) {
+                        console.log("10s Job: No emotions detected in this window. Skipping API call.");
+                        return []; // Vẫn trả về mảng rỗng để reset
+                    }
 
-                // Tìm cảm xúc xuất hiện nhiều nhất
-                const emotionCounts = currentHistory.reduce((acc, emotion) => {
-                    acc[emotion] = (acc[emotion] || 0) + 1;
-                    return acc;
-                }, {} as Record<string, number>);
+                    // Tìm cảm xúc xuất hiện nhiều nhất
+                    const emotionCounts = currentHistory.reduce((acc, emotion) => {
+                        acc[emotion] = (acc[emotion] || 0) + 1;
+                        return acc;
+                    }, {} as Record<string, number>);
 
-                const dominantEmotion = Object.keys(emotionCounts).reduce((a, b) =>
-                    emotionCounts[a] > emotionCounts[b] ? a : b
-                );
-                
-                const emotionId = emotionMap[dominantEmotion];
+                    const dominantEmotion = Object.keys(emotionCounts).reduce((a, b) =>
+                        emotionCounts[a] > emotionCounts[b] ? a : b
+                    );
 
-                console.log(`10s Job: Dominant emotion is '${dominantEmotion}' (ID: ${emotionId}). Sending to backend...`);
+                    const emotionId = emotionMap[dominantEmotion];
 
-                // Gọi API
-                if (emotionId) {
-                    const requestBody = {
-                        userId: 1, // userId set cứng
-                        emotion: emotionId,
-                        event: "cron_collect"
-                    };
-                    axios.post(API_URL, requestBody, {
-                        headers: { 'Authorization': `Bearer ${BEARER_TOKEN}` }
-                    }).then(response => {
-                        console.log("Successfully sent emotion data:", response.data);
-                    }).catch(error => {
-                        console.error("Error sending emotion data:", error);
-                    });
-                }
+                    console.log(`10s Job: Dominant emotion is '${dominantEmotion}' (ID: ${emotionId}). Sending to backend...`);
 
-                // Reset mảng lịch sử cho chu kỳ 10 giây tiếp theo
-                return [];
-            });
+                    if (emotionId) {
+                        const requestBody = {
+                            userId: userId,
+                            emotion: emotionId,
+                            event: "cron_collect"
+                        };
+                        collectEmotion(requestBody).then(response => {
+                            console.log("Successfully sent emotion data:", response.data);
+                        }).catch(error => {
+                            console.error("Error sending emotion data:", error);
+                        });
+                    }
+                    return [];
+                });
 
-        }, 10000); // Chạy mỗi 10 giây
-
-        // Cleanup function để dừng interval khi component unmount
+                // Gọi API để lấy danh sách bài hát gợi ý
+                getRecommendedQueue(10).then(response => {
+                    console.log("Recommended queue fetched:", response.data);
+                    setQueue(response?.data);
+                }).catch(error => {
+                    console.error("Error fetching recommended queue:", error);
+                });
+            }, recommendInterval * 1000); // Chạy mỗi 10 giây
+        }
         return () => {
             console.log("Cleaning up 10s job interval.");
             clearInterval(jobInterval);
         };
-    }, []); // Mảng dependency rỗng để đảm bảo interval chỉ được tạo một lần
+    }, [allowRecommend, recommendInterval, userId]); // Mảng dependency rỗng để đảm bảo interval chỉ được tạo một lần
 
     return (
-        <div className="relative flex flex-col items-center space-y-4 p-4">
-            <video ref={videoRef} autoPlay muted playsInline className="w-[720px] h-[540px] rounded-lg shadow-lg" />
-            <canvas ref={canvasRef} className="absolute top-4" style={{ width: '720px', height: '540px' }} />
-            <p className="text-lg font-semibold text-white bg-black bg-opacity-50 px-3 py-1 rounded-md">
-                Current emotion: {currentEmotion}
-            </p>
+        <div className="flex flex-col items-center space-y-4 p-4 w-full">
+            <video ref={videoRef} autoPlay className="lg:w-[1400px] h-80 object-none rounded-lg shadow-lg" style={{ transform: "scaleX(-1)" }}/>
+            {/*<canvas ref={canvasRef} className="absolute top-0 left-0" />*/}
+            <p className="text-lg font-semibold">Current emotion: {currentEmotion}</p>
         </div>
     );
-};
+});
