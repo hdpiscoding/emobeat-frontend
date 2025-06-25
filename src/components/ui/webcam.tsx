@@ -144,7 +144,7 @@ export const  Webcam: react.FC = react.memo(() => {
                 });
 
                 // Gọi API để lấy danh sách bài hát gợi ý
-                getRecommendedQueue(10).then(response => {
+                getRecommendedQueue(20).then(response => {
                     console.log("Recommended queue fetched:", response.data);
                     setQueue(response?.data);
                 }).catch(error => {
