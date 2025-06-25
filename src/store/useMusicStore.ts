@@ -31,10 +31,9 @@ interface MusicState {
     shuffleQueue: () => void;
     unshuffleQueue: () => void;
     togglePlay: (isPlaying: boolean) => void;
-    replenishQueue: () => void;
 }
 
-const MAX_QUEUE_LENGTH = 10;
+const MAX_QUEUE_LENGTH = 20;
 
 function shuffleArray<T>(array: T[]): T[] {
     const arr = [...array];
@@ -68,19 +67,21 @@ export const useMusicStore = create<MusicState>((set, get) => ({
         const uniqueTracks = uniqueById(tracks);
         // Always enforce MAX_QUEUE_LENGTH on originalQueue
         const limitedTracks = uniqueTracks.slice(0, MAX_QUEUE_LENGTH);
+        const { currentTrack } = get();
 
-        // If queue is empty, initialize it with tracks
-        const { queue } = get();
-        if (queue.length <= 0) {
-            set({
-                queue: limitedTracks.slice(1, MAX_QUEUE_LENGTH),
-                originalQueue: limitedTracks,
-            });
-        } else {
-            // Otherwise, just update the source queue
-            set({
-                originalQueue: limitedTracks,
-            });
+        // Set originalQueue to the full track list
+        set({ originalQueue: limitedTracks });
+
+        // If no currentTrack, queue is same as originalQueue
+        if (!currentTrack) {
+            set({ queue: limitedTracks });
+        }
+        // If currentTrack exists, filter it from queue to avoid duplication
+        else {
+            const queueWithoutCurrent = limitedTracks.filter(track =>
+                track.id !== currentTrack.id
+            );
+            set({ queue: queueWithoutCurrent });
         }
     },
 
@@ -108,10 +109,6 @@ export const useMusicStore = create<MusicState>((set, get) => ({
             queue: filteredQueue,
             isPlaying: false, // Reset to ensure clean playback
         });
-        // Replenish queue if needed
-        if (filteredQueue.length < MAX_QUEUE_LENGTH) {
-            get().replenishQueue();
-        }
         // Add to originalQueue if not present and under max length
         if (!originalQueue.some((t) => t.id === track.id) && originalQueue.length < MAX_QUEUE_LENGTH) {
             set({
@@ -137,7 +134,7 @@ export const useMusicStore = create<MusicState>((set, get) => ({
                 })
             }, 200);
             // Replenish queue
-            get().replenishQueue();
+            // get().replenishQueue();
         } else {
             // No tracks left
             set({
@@ -189,30 +186,4 @@ export const useMusicStore = create<MusicState>((set, get) => ({
     togglePlay: (isPlaying) => set({ isPlaying }),
 
     setIsShuffled: (isShuffled) => set({ isShuffled }),
-
-    replenishQueue: () => {
-        const { queue, originalQueue, currentTrack } = get();
-
-        // Don't replenish if already at max capacity
-        if (queue.length >= MAX_QUEUE_LENGTH) {
-            return;
-        }
-
-        // Create a set of IDs already in use
-        const usedIds = new Set([
-            ...(currentTrack ? [currentTrack.id] : []),
-            ...queue.map((t) => t.id),
-        ]);
-
-        // Find tracks from originalQueue not already in queue or currentTrack
-        const tracksToAdd = originalQueue
-            .filter(track => !usedIds.has(track.id))
-            .slice(0, MAX_QUEUE_LENGTH - queue.length);
-
-        if (tracksToAdd.length > 0) {
-            set({
-                queue: [...queue, ...tracksToAdd],
-            });
-        }
-    },
 }));
