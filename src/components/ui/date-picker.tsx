@@ -66,7 +66,7 @@ const DatePicker = ({ className, date, setDate, type }: DatePickerProps) => {
                             setIsCalendarOpen(false);
                         }}
                         initialFocus
-                        captionLayout="dropdown-buttons"
+                        captionLayout="dropdown"
                         fromYear={1940}
                         toYear={2025}
                     />

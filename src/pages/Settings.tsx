@@ -79,7 +79,7 @@ export const Settings = () => {
                             required: "Required",
                             min: { value: 500, message: "Min is 500" },
                             max: { value: 10000, message: "Max is 10000" },
-                            valueAsNumber: true,
+                            // valueAsNumber: true,
                             validate: v => Number.isInteger(Number(v)) || "Must be integer"
                         }}
                         render={({ field }) => (
@@ -103,7 +103,7 @@ export const Settings = () => {
                             required: "Required",
                             min: { value: 10, message: "Min is 10" },
                             max: { value: 120, message: "Max is 120" },
-                            valueAsNumber: true,
+                            // valueAsNumber: true,
                             validate: v => (Number.isInteger(Number(v)) && Number(v) > 0) || "Must be positive integer"
                         }}
                         render={({ field }) => (
