@@ -44,7 +44,7 @@ export const Login = () => {
             <div className="bg-white p-8 rounded-lg shadow-md w-96">
                 {/* App Icon Placeholder */}
                 <div className="flex justify-center mb-4">
-                    <img src="public/icon/emobeat_vertical.png" className="w-[100px] h-[100px]"/>
+                    <img src="/icon/emobeat_vertical.png" className="w-[100px] h-[100px]"/>
                 </div>
                 <h1 className="text-4xl font-semibold text-center mb-6">LOG IN</h1>
                 <Form {...form}>

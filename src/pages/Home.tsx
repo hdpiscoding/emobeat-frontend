@@ -178,7 +178,7 @@ export const Home = () => {
                     ?
                     <div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mt-6">
-                            {queue.slice(0, 5).map((song) => (
+                            {queue.slice(0, 5).map((song : any) => (
                                 <SongCard
                                     id={song?.id}
                                     title={song?.name}
