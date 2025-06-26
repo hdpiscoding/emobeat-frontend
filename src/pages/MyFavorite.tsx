@@ -11,7 +11,7 @@ const header = {
 }
 
 export const MyFavorite = () => {
-    const [myFavorites, setMyFavorites] = React.useState();
+    const [myFavorites, setMyFavorites] = React.useState<any[]>([]);
     const [page, setPage] = React.useState(1);
 
     useEffect(() => {

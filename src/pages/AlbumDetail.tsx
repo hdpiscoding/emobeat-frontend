@@ -9,7 +9,13 @@ import {useParams} from "react-router-dom";
 export const AlbumDetail = () => {
     const {albumId} = useParams<{ albumId: string }>();
     const [songList, setSongList] = React.useState([]);
-    const [albumDetail, setAlbumDetail] = React.useState();
+    type AlbumDetailType = {
+        coverPhoto?: string;
+        description?: string;
+        name?: string;
+        // add other properties as needed
+    };
+    const [albumDetail, setAlbumDetail] = React.useState<AlbumDetailType | undefined>();
     const [page, setPage] = React.useState(1);
 
     useEffect(() => {
@@ -36,7 +42,14 @@ export const AlbumDetail = () => {
     }
     return (
         <div className="flex flex-col gap-10 w-full px-4 mt-1">
-            <SongListHeader image={albumDetail?.coverPhoto} description={albumDetail?.description ?? ""} title={albumDetail?.name ?? ""} theme={"#0B77B3"}></SongListHeader>
+            {albumDetail && (
+                <SongListHeader
+                    image={albumDetail.coverPhoto}
+                    description={albumDetail.description ?? ""}
+                    title={albumDetail.name ?? ""}
+                    theme={"#0B77B3"}
+                />
+            )}
 
             <div
                 className="grid items-center justify-items-start w-full py-3 px-4 text-sm font-semibold text-[#333] grid-cols-3 lg:grid-cols-4
