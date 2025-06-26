@@ -7,25 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {useGeneralStore} from "@/store/useGeneralStore.ts";
 import {toast} from "react-toastify";
+import {updateMySetting} from "@/services/userServices.ts";
 
 type SettingsFormValues = {
     allowRecommending: boolean;
-    emotionInterval: number;
+    detectInterval: number;
     recommendInterval: number;
 };
 
 export const Settings = () => {
     const allowRecommend = useGeneralStore(state => state.allowRecommend);
     const setAllowRecommend = useGeneralStore(state => state.setAllowRecommend);
-    const emotionInterval = useGeneralStore(state => state.detectInterval);
-    const setEmotionInterval = useGeneralStore(state => state.setDetectInterval);
+    const detectInterval = useGeneralStore(state => state.detectInterval);
+    const setDetectInterval = useGeneralStore(state => state.setDetectInterval);
     const recommendInterval = useGeneralStore(state => state.recommendInterval);
     const setRecommendInterval = useGeneralStore(state => state.setRecommendInterval);
 
     const form = useForm<SettingsFormValues>({
         defaultValues: {
             allowRecommending: allowRecommend,
-            emotionInterval: emotionInterval,
+            detectInterval: detectInterval,
             recommendInterval: recommendInterval,
         },
         mode: "onChange",
@@ -33,11 +34,16 @@ export const Settings = () => {
 
     const { handleSubmit, control, formState: { errors } } = form;
 
-    const onSubmit = (data: SettingsFormValues) => {
+    const onSubmit = async (data: SettingsFormValues) => {
         // Handle save logic here
         setAllowRecommend(data.allowRecommending);
-        setEmotionInterval(data.emotionInterval);
+        setDetectInterval(data.detectInterval);
         setRecommendInterval(data.recommendInterval);
+        await updateMySetting({
+            isAllowRecommend: data.allowRecommending,
+            detectInterval: data.detectInterval,
+            recommendInterval: data.recommendInterval
+        });
         console.log(data);
         console.log("Allow Recommending:", allowRecommend);
         toast.success("Settings saved successfully!");
@@ -68,7 +74,7 @@ export const Settings = () => {
                     />
                     <FormField
                         control={control}
-                        name="emotionInterval"
+                        name="detectInterval"
                         rules={{
                             required: "Required",
                             min: { value: 500, message: "Min is 500" },

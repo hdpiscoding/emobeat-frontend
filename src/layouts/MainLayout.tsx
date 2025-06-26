@@ -10,6 +10,7 @@ import {useMusicStore} from "@/store/useMusicStore.ts";
 import {collectEmotion} from "@/services/emotionServices.ts";
 import {useAuthStore} from "@/store/useAuthStore.ts";
 import {useGeneralStore} from "@/store/useGeneralStore.ts";
+import {getMySetting} from "@/services/userServices.ts";
 
 // const emotionMap: { [key: string]: number } = {
 //     neutral: 1,
@@ -169,6 +170,22 @@ export default function MainLayout(){
     const handleVolumeChange = (newVolume: number) => {
         setVolume(newVolume);
     }
+
+    const {setAllowRecommend, setRecommendInterval, setDetectInterval} = useGeneralStore();
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const response = await getMySetting();
+                setAllowRecommend(response.data?.isAllowRecommend);
+                setRecommendInterval(response.data?.recommendInterval);
+                setDetectInterval(response.data?.detectInterval);
+            } catch (error) {
+                console.error("Error fetching user settings:", error);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     return (
         <SidebarProvider>

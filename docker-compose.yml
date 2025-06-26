@@ -1,0 +1,12 @@
+version: "3"
+services:
+  emobeat-fe:
+    image: haphuthinh/emobeat-fe:latest
+    ports:
+      - "7079:80"
+    container_name: emobeat-fe
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 500M

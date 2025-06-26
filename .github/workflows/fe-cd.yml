@@ -19,7 +19,7 @@ jobs:
         run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
       - name: Build Docker image
-        run: docker build -t $IMAGE_NAME ./clinic-management-app
+        run: docker build -t $IMAGE_NAME .
 
       - name: Push Docker image to Docker Hub
         run: docker push $IMAGE_NAME
@@ -39,7 +39,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           source: "./*"
-          target: "/root/emobeat/frontend"
+          target: "/home/project/da2_project/frontend"
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v0.1.4
@@ -49,7 +49,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
           script: |
-            cd /root/emobeat/frontend/  
+            cd /home/project/da2_project/frontend/  
             sudo docker compose down  
             sudo docker compose pull     
             sudo docker compose up -d
